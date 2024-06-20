@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-# blast2taxonomy.py
+# species2taxonomy.py
 # Author: Yannis Schöneberg <yannis.schoeneberg@gmx.de>
-# This script takes in a blast result table and outputs the taxonomy data in a tsv file
+# This script takes in a list of species names and outputs the taxonomy data in a tsv file
 # Version 0.1.0
 import getopt
 import sys
