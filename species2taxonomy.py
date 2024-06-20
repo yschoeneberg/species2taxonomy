@@ -8,7 +8,6 @@ import sys
 import os
 import logging
 import pandas as pd
-from multiprocessing import Pool
 from ete3 import NCBITaxa
 from itertools import repeat
 
