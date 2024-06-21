@@ -9,18 +9,14 @@ import os
 import logging
 import pandas as pd
 from ete3 import NCBITaxa
-from itertools import repeat
+from itertools import chain
 
 
 def get_options(argv):
     global version
     global skip_update
     global skip_failed
-    global threads
     global ranks
-    global tax_column
-    global perc_column
-    global len_column
     global fail_file
     version = "0.1.0"
     skip_update = False
@@ -29,11 +25,11 @@ def get_options(argv):
     fail_file = "failed_taxids.tsv"
     
     try:
-        opts, args = getopt.getopt(argv, "hfsi:o", ["ifile=", "ofile="])
+        opts, args = getopt.getopt(argv, "hi:o:r:sf", ["ifile=", "ofile="])
     except getopt.GetoptError:
         print(f"Usage: blast2taxonomy_v{str(version)}.py -i <infile> -o <outfile> -c <column taxids> -t <num threads>\n"
               f"Type blast2taxonomy_v{str(version)}.py -h for help")
-        
+    print (f"opts: {opts}")
     for opt, arg in opts:
         if opt == '-h':
             print(f"\nUsage: blast2taxonomy_v{str(version)}.py [options]\n"
@@ -44,12 +40,12 @@ def get_options(argv):
                   f"\t-o\tOutput file\n"
                   f"\n"
                   f"OPTIONAL:\n"
-                  f"\t-r\tComma seperated list of taxonomic ranks to extract. Must be ranks of the NCBI-Taxonomy.\n
+                  f"\t-r\tComma seperated list of taxonomic ranks to extract. Must be ranks of the NCBI-Taxonomy.\n"
                   f"\t-s\tSkip Taxonomy Database Update\n"
-                  f"\t-f\tSkip failed taxIDs and write those to 'failed_taxids.tsv'"
+                  f"\t-f\tSkip failed taxIDs and write those to 'failed_taxids.tsv'\n"
                   f"\t-h\tDisplay this help message\n"
                   f"\n")
-            exit()
+            sys.exit()
         elif opt == '-i':
             global species_infile
             species_infile = arg
@@ -79,17 +75,20 @@ def update_taxdb():
 
 
 def get_taxonomy (species, ranks):
+    taxids = ncbi.get_name_translator(species)
+    taxids = list(taxids.values())
+    taxids = list(chain(*taxids))
 
-    tax_annotations = []
-    for spec in species:
-        lineage2ranks = ncbi.get_rank(species)
-        ranks2lineage = dict((rank, species) for (species, rank) in lineage2ranks.items())
-        desired_taxids = [ranks2lineage.get(rank, 'Nan') for rank in ranks]
-        taxonomy = ncbi.get_taxid_translator(lineage)
-        tax_inf = [taxonomy.get(species, 'Nan') for taxid in desired_taxids]
-        tax_annotations.append(tax_inf)
-    transp_taxonomy = list(zip(*tax_annotations))
-    return [species[0]] + transp_taxs
+    taxonomic_info = []
+    for id in taxids:
+        lineage = ncbi.get_lineage(id)
+        names = ncbi.get_taxid_translator(lineage)
+        extracted_ranks = ncbi.get_rank(lineage)
+        extracted_ranks = dict((val, key) for key, val in extracted_ranks.items())
+        desired_taxids = [extracted_ranks.get(rank, 'Nan') for rank in ranks]
+        tax_inf = [names.get(tid, 'Nan') for tid in desired_taxids]
+        taxonomic_info.append(tax_inf)
+    return taxonomic_info
 
 
 if __name__ == '__main__':
@@ -101,16 +100,17 @@ if __name__ == '__main__':
     logger.addHandler(my_handler)
     logger.setLevel(logging.INFO)
 
+    print(sys.argv)
     get_options(sys.argv[1:])
 
-    logger.info(f"#### Extracting Taxonomy Information for Blast Results\n"
+    logger.info(f"#### Extracting Taxonomy Information for given Species\n"
                 f"{'Program Version:':<50} {str(version)}\n"
                 f"{'Species List:':<50} {species_infile}\n"
                 f"{'Output file:':<50} {outfile}\n"
                 f"{'Skip Taxonomy DB update:':<50} {skip_update}\n"
-                f"{'Skip failed Species:':<50} {skip_failed}\n"
+                f"{'Skip failed Species:':<50} {skip_failed}\n")
     species = pd.read_csv(species_infile, sep="\t", dtype=str, header=None)
-    species = species.values.tolist()
+    species = species[0].values.tolist()
     global ncbi
     ncbi = NCBITaxa()
     if skip_update is False:
@@ -125,3 +125,4 @@ if __name__ == '__main__':
     logger.info(f"Writing Taxonomy Information to: {outfile}")
     pd.DataFrame(taxlist, columns=ranks).to_csv(outfile, sep="\t", index=False)
     logger.info(f"Done")
+
