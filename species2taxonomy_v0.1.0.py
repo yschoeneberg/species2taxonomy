@@ -27,12 +27,12 @@ def get_options(argv):
     try:
         opts, args = getopt.getopt(argv, "hi:o:r:sf", ["ifile=", "ofile="])
     except getopt.GetoptError:
-        print(f"Usage: blast2taxonomy_v{str(version)}.py -i <infile> -o <outfile> -c <column taxids> -t <num threads>\n"
-              f"Type blast2taxonomy_v{str(version)}.py -h for help")
+        print(f"Usage: species2taxonomy_v{str(version)}.py -i <infile> -o <outfile> -c <column taxids> -t <num threads>\n"
+              f"Type species2taxonomy_v{str(version)}.py -h for help")
     print (f"opts: {opts}")
     for opt, arg in opts:
         if opt == '-h':
-            print(f"\nUsage: blast2taxonomy_v{str(version)}.py [options]\n"
+            print(f"\nUsage: species2taxonomy_v{str(version)}.py [options]\n"
                   f"Version: {str(version)}\n"
                   f"\n"
                   f"REQUIRED:\n"
