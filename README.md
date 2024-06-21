@@ -29,5 +29,3 @@ A tsv file containig the species and the higher taxonomy information extracted f
                     -f    Skip failed taxIDs and write those to 'failed_taxids.tsv'
                     -h    Display this help message
 ```
-## Citation
-To cite this program, I suggest citing the github repository:
