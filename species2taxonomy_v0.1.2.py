@@ -2,7 +2,7 @@
 # species2taxonomy.py
 # Author: Yannis Schöneberg <yannis.schoeneberg@gmx.de>
 # This script takes in a list of species names and outputs the taxonomy data in a tsv file
-# Version 0.1.1
+# Version 0.1.2
 import getopt
 import sys
 import os
@@ -18,7 +18,7 @@ def get_options(argv):
     global skip_failed
     global ranks
     global fail_file
-    version = "0.1.1"
+    version = "0.1.2"
     skip_update = False
     skip_failed = False
     ranks = ['kingdom', 'phylum', 'superclass', 'class', 'subclass', 'order', 'infraorder', 'superfamily', 'family', 'genus', 'species']
@@ -74,20 +74,29 @@ def update_taxdb():
     os.remove("taxdump.tar.gz")
 
 
-def get_taxonomy (species, ranks):
-    taxids = ncbi.get_name_translator(species)
-    taxids = list(taxids.values())
-    taxids = list(chain(*taxids))
-
+def get_taxonomy (species, ranks, skip_failed, fail_file = None):
     taxonomic_info = []
-    for id in taxids:
-        lineage = ncbi.get_lineage(id)
-        names = ncbi.get_taxid_translator(lineage)
-        extracted_ranks = ncbi.get_rank(lineage)
-        extracted_ranks = dict((val, key) for key, val in extracted_ranks.items())
-        desired_taxids = [extracted_ranks.get(rank, 'Nan') for rank in ranks]
-        tax_inf = [names.get(tid, 'Nan') for tid in desired_taxids]
-        taxonomic_info.append(tax_inf)
+    for spec in species:
+        print(spec)
+        taxid = ncbi.get_name_translator([spec])
+        if taxid == {}:
+            if skip_failed == True:
+                logger.warning(f"{spec} not found! Writing to {fail_file}")
+                with open(fail_file, "a") as file:
+                    file.write("\t".join(spec))
+            else:
+                logger.error(f"Did not find {spec} in the taxonomy database. To skip failed species and write those to a file, use the -f option.")
+                raise ValueError
+        else:
+            taxid = list(taxid.values())[0][0]
+            print(taxid)
+            lineage = ncbi.get_lineage(taxid)
+            names = ncbi.get_taxid_translator(lineage)
+            extracted_ranks = ncbi.get_rank(lineage)
+            extracted_ranks = dict((val, key) for key, val in extracted_ranks.items())
+            desired_taxids = [extracted_ranks.get(rank, 'Nan') for rank in ranks]
+            tax_inf = [names.get(tid, 'Nan') for tid in desired_taxids]
+            taxonomic_info.append(tax_inf)
     return taxonomic_info
 
 
@@ -100,7 +109,6 @@ if __name__ == '__main__':
     logger.addHandler(my_handler)
     logger.setLevel(logging.INFO)
 
-    print(sys.argv)
     get_options(sys.argv[1:])
 
     logger.info(f"#### Extracting Taxonomy Information for given Species\n"
@@ -119,10 +127,9 @@ if __name__ == '__main__':
         logger.info("Skipping Taxonomy Database Update")
 
     logger.info(f"Searching TaxIDs vs Taxonomy DB")
-    taxlist = get_taxonomy(species, ranks)
+    taxlist = get_taxonomy(species, ranks, skip_failed, fail_file)
     taxlist = [i for i in taxlist if i is not None]
 
     logger.info(f"Writing Taxonomy Information to: {outfile}")
     pd.DataFrame(taxlist, columns=ranks).to_csv(outfile, sep="\t", index=False)
     logger.info(f"Done")
-
