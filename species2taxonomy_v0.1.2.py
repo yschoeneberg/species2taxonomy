@@ -2,7 +2,7 @@
 # species2taxonomy.py
 # Author: Yannis Schöneberg <yannis.schoeneberg@gmx.de>
 # This script takes in a list of species names and outputs the taxonomy data in a tsv file
-# Version 0.1.3
+# Version 0.1.2
 import getopt
 import sys
 import os
@@ -18,7 +18,7 @@ def get_options(argv):
     global skip_failed
     global ranks
     global fail_file
-    version = "0.1.3"
+    version = "0.1.2"
     skip_update = False
     skip_failed = False
     ranks = ['kingdom', 'phylum', 'superclass', 'class', 'subclass', 'order', 'infraorder', 'superfamily', 'family', 'genus', 'species']
