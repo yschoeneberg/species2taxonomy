@@ -2,7 +2,7 @@
 # species2taxonomy.py
 # Author: Yannis Schöneberg <yannis.schoeneberg@gmx.de>
 # This script takes in a list of species names and outputs the taxonomy data in a tsv file
-# Version 0.1.2
+# Version 0.1.3
 import getopt
 import sys
 import os
@@ -18,7 +18,7 @@ def get_options(argv):
     global skip_failed
     global ranks
     global fail_file
-    version = "0.1.2"
+    version = "0.1.3"
     skip_update = False
     skip_failed = False
     ranks = ['kingdom', 'phylum', 'superclass', 'class', 'subclass', 'order', 'infraorder', 'superfamily', 'family', 'genus', 'species']
@@ -29,7 +29,6 @@ def get_options(argv):
     except getopt.GetoptError:
         print(f"Usage: species2taxonomy_v{str(version)}.py -i <infile> -o <outfile> -c <column taxids> -t <num threads>\n"
               f"Type species2taxonomy_v{str(version)}.py -h for help")
-    print (f"opts: {opts}")
     for opt, arg in opts:
         if opt == '-h':
             print(f"\nUsage: species2taxonomy_v{str(version)}.py [options]\n"
@@ -77,7 +76,6 @@ def update_taxdb():
 def get_taxonomy (species, ranks, skip_failed, fail_file = None):
     taxonomic_info = []
     for spec in species:
-        print(spec)
         taxid = ncbi.get_name_translator([spec])
         if taxid == {}:
             if skip_failed == True:
@@ -89,7 +87,6 @@ def get_taxonomy (species, ranks, skip_failed, fail_file = None):
                 raise ValueError
         else:
             taxid = list(taxid.values())[0][0]
-            print(taxid)
             lineage = ncbi.get_lineage(taxid)
             names = ncbi.get_taxid_translator(lineage)
             extracted_ranks = ncbi.get_rank(lineage)
